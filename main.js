@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import WebGL from 'three/addons/capabilities/WebGL.js';
 
 function init() {
     const scene = new THREE.Scene();
@@ -11,8 +10,10 @@ function init() {
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
 
+    const colorMap = new THREE.TextureLoader().load('snow_tex.jpg');
+
     const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    const material = new THREE.MeshBasicMaterial( { color: 0x00ff00, map: colorMap} );
     const cube = new THREE.Mesh( geometry, material );
     scene.add( cube );
 

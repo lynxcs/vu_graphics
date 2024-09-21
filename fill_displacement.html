@@ -55,9 +55,9 @@
     <canvas id="canvasN" height="128" width="128"></canvas>
     <script type="module">
         import * as THREE from 'three'
-        import { OrbitControls } from '/jsm/controls/OrbitControls.js'
-        import Stats from '/jsm/libs/stats.module.js'
-        import { GUI } from 'dat.gui'
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import Stats from 'three/examples/jsm/libs/stats.module.js';
+        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
         const scene = new THREE.Scene()
 
@@ -102,20 +102,24 @@
         const displacementMap = new THREE.CanvasTexture(canvasD)
         const normalMap = new THREE.CanvasTexture(canvasN)
 
-        const geometry = new THREE.PlaneGeometry(1, 1, 128, 128)
+        const colorMap = new THREE.TextureLoader().load('snow_tex.jpg');
+
+        const geometry = new THREE.PlaneGeometry(1, 1, 512, 512)
         const material = new THREE.MeshStandardMaterial({
             displacementMap: displacementMap,
             displacementScale: 0.1,
             normalMap: normalMap,
+            map: colorMap,
+            color: 0x00FF00
         })
 
         const plane = new THREE.Mesh(geometry, material)
         plane.rotation.x = -Math.PI / 2
         scene.add(plane)
 
-        const geometry2 = new THREE.PlaneGeometry(2, 2, 256, 256)
+        const geometry2 = new THREE.PlaneGeometry(2, 2, 1024, 1024)
         const material2 = new THREE.MeshStandardMaterial({
-            color: '0xFF0000'
+            color: 0xFF0000
         });
 
         const plane2 = new THREE.Mesh(geometry2, material2)
@@ -219,9 +223,13 @@
         }
 
         function draw(uv) {
-            // contextD.fillStyle = '#AAAAAA'
-            // contextD.fillRect(uv.x * 128, 128 - uv.y * 128, 2, 2)
-            increasePixelValues(uv.x * 128, 128 - uv.y * 128, controlParameters.brushSize, controlParameters.brushSize, controlParameters.brushPower, contextD)
+            const top_left_cast_x = uv.x * 128;
+            const top_left_cast_y = 128 - uv.y * 128;
+
+            const top_left_x = top_left_cast_x - controlParameters.brushSize / 2;
+            const top_left_y = top_left_cast_y - controlParameters.brushSize / 2;
+
+            increasePixelValues(top_left_x, top_left_y, controlParameters.brushSize, controlParameters.brushSize, controlParameters.brushPower, contextD)
             material.needsUpdate = true
             material.displacementMap.needsUpdate = true
             height2normal(contextD, contextN)
