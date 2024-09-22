@@ -114,53 +114,102 @@ void main() {
         // Modify also <canvas>
         const textureSize = 128;
 
-        function setHeights(heightfield, canvas, scale, update_h = false) {
-            const { x, z, y } = scale
-            const imageData = canvas.getImageData(0, 0, textureSize, textureSize)
+        // function setHeights(heightfield, canvas, scale, update_h = false) {
+        //     const { x, z, y } = scale
+        //     const imageData = canvas.getImageData(0, 0, textureSize, textureSize)
 
-            const matrix = heightfield.data
-            if (update_h) {
-                for (let i = 0; i < imageData.height; i++) {
-                    for (let j = 0; j < imageData.width; j++) {
-                        const a = imageData.data[(i * imageData.height + j) * 4]
-                        const height = (((a) / 255) * z) + heightOffset
-                        matrix[i][j] = height
-                        // if (x < 0) {
-                        // } else {
-                        //     row.unshift(height)
-                        // }
+        //     const matrix = heightfield.data
+        //     matrix.length = 0
+        //     heightfield.elementSize = Math.abs(x) / imageData.width
+        //     for (let i = 0; i < imageData.height; i++) {
+        //         const row = []
+        //         for (let j = 0; j < imageData.width; j++) {
+        //             const a = imageData.data[(i * imageData.height + j) * 4]
+        //             const height = (((a) / 255) * z) + heightOffset
+        //             if (x < 0) {
+        //                 row.push(height)
+        //             } else {
+        //                 row.unshift(height)
+        //             }
+        //         }
+        //         if (y < 0) {
+        //             matrix.unshift(row)
+        //         } else {
+        //             matrix.push(row)
+        //         }
+        //     }
+        //     heightfield.updateMaxValue()
+        //     heightfield.updateMinValue()
+        //     heightfield.update()
+        // }
+
+        function setHeights(heightfield, canvas, scale, update_h = false) {
+            const { x, z, y } = scale;
+            const imageData = canvas.getImageData(0, 0, textureSize, textureSize);
+
+            // Set element size for heightfield
+            if (update_h === false) {
+                heightfield.elementSize = Math.abs(x) / imageData.width;
+                heightfield.data = [...Array(imageData.width)].map(e => Array(imageData.height).fill(0));
+            }
+
+            const matrix = heightfield.data;
+
+            // Iterate over the imageData and update the matrix accordingly
+            let lowest = 9999.999;
+            let highest = -9999.99;
+            for (let i = 0; i < imageData.height; i++) {
+                const dataOffset = i * imageData.height;
+                const matrixRow = matrix[y < 0 ? imageData.height - 1 - i : i];
+                for (let j = 0; j < imageData.width; j++) {
+                    const a = imageData.data[(dataOffset + j) * 4];
+                    const height = (((a) / 255) * z) + heightOffset;
+                    const colIdx = x < 0 ? j : imageData.width - 1 - j;
+
+                    if (height < lowest) {
+                        lowest = height;
                     }
-                    // if (y < 0) {
-                    //     matrix.unshift(row)
-                    // } else {
-                    //     matrix.push(row)
-                    // }
-                }
-            } else {
-                matrix.length = 0
-                heightfield.elementSize = Math.abs(x) / imageData.width
-                for (let i = 0; i < imageData.height; i++) {
-                    const row = []
-                    for (let j = 0; j < imageData.width; j++) {
-                        const a = imageData.data[(i * imageData.height + j) * 4]
-                        const height = (((a) / 255) * z) + heightOffset
-                        if (x < 0) {
-                            row.push(height)
-                        } else {
-                            row.unshift(height)
-                        }
+                    if (height > highest) {
+                        highest = height;
                     }
-                    if (y < 0) {
-                        matrix.unshift(row)
-                    } else {
-                        matrix.push(row)
-                    }
+
+                    matrixRow[colIdx] = height;
                 }
             }
-            heightfield.updateMaxValue()
-            heightfield.updateMinValue()
-            heightfield.update()
+
+            heightfield.maxValue = highest;
+            heightfield.minValue = lowest;
+            heightfield.update();
         }
+
+        // function setHeights(heightfield, canvas, scale, update_h = false) {
+        //     const { x, z, y } = scale
+        //     const imageData = canvas.getImageData(0, 0, textureSize, textureSize)
+
+        //     const matrix = heightfield.data
+        //     matrix.length = 0
+        //     heightfield.elementSize = Math.abs(x) / imageData.width
+        //     for (let i = 0; i < imageData.height; i++) {
+        //         const row = []
+        //         for (let j = 0; j < imageData.width; j++) {
+        //             const a = imageData.data[(i * imageData.height + j) * 4]
+        //             const height = (((a) / 255) * z) + heightOffset
+        //             if (x < 0) {
+        //                 row.push(height)
+        //             } else {
+        //                 row.unshift(height)
+        //             }
+        //         }
+        //         if (y < 0) {
+        //             matrix.unshift(row)
+        //         } else {
+        //             matrix.push(row)
+        //         }
+        //     }
+        //     heightfield.updateMaxValue()
+        //     heightfield.updateMinValue()
+        //     heightfield.update()
+        // }
 
         // Add three-mesh-bvh extensions
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -229,7 +278,7 @@ void main() {
         controls.enableDamping = true
 
         const canvasD = document.getElementById('canvasD')
-        const contextD = canvasD.getContext('2d')
+        const contextD = canvasD.getContext('2d', { willReadFrequently: true })
         const canvasN = document.getElementById('canvasN')
         const contextN = canvasN.getContext('2d')
         contextN.fillStyle = '#7f7fff'
@@ -281,29 +330,6 @@ void main() {
         })
         groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // make it face up
         world.addBody(groundBody)
-
-        // const radius = 0.5;
-        // const sphereBody = new CANNON.Body({
-        //     mass: 1.0,
-        //     shape: new CANNON.Sphere(radius),
-        //     allowSleep: true,
-        // })
-        // sphereBody.position.set(0, 10, 0)
-        // const sphereGeom = new THREE.SphereGeometry(radius);
-        // const sphereMaterial = new THREE.MeshNormalMaterial();
-        // const sphereMesh = new THREE.Mesh(sphereGeom, sphereMaterial);
-        // scene.add(sphereMesh)
-        // world.addBody(sphereBody)
-
-        const geometry2 = new THREE.PlaneGeometry(4, 4, 2, 2)
-        const material2 = new THREE.MeshStandardMaterial({
-            color: 0xFF0000,
-            side: THREE.DoubleSide
-        });
-
-        const plane2 = new THREE.Mesh(geometry2, material2)
-        plane2.rotation.x = -Math.PI / 2
-        scene.add(plane2)
 
         const raycaster = new THREE.Raycaster()
         raycaster.firstHitOnly = true;
@@ -428,8 +454,6 @@ void main() {
             var modified = false;
             for (let i = 0; i < data.length; i += 4) {
                 var data_r = data[i];
-                var data_g = data[i + 1];
-                var data_b = data[i + 2];
                 if (increaseTo) {
                     data[i] = clamp(0, data[i] - 1, increaseBy)
                     data[i + 1] = clamp(0, data[i + 1] - 1, increaseBy); // Green
@@ -437,7 +461,6 @@ void main() {
                     // data[i] = clamp(0, data[i], increaseBy)
                     // data[i + 1] = clamp(0, data[i + 1], increaseBy); // Green
                     // data[i + 2] = clamp(0, data[i + 2], increaseBy); // Blue
-                    modified = true;
                 } else {
                     data[i] = clamp(0, 255, data[i] + increaseBy);     // Red
                     data[i + 1] = clamp(0, 255, data[i + 1] + increaseBy); // Green
@@ -480,6 +503,7 @@ void main() {
                 }
                 debugMeshWasupdated = true;
             }
+            return was_modified;
         }
 
         function raycast() {
@@ -750,7 +774,7 @@ void main() {
                 lastRaycast = Date.now();
             }
 
-            world.fixedStep(1 / 120)
+            world.fixedStep(1 / 60)
 
             if (debugEnabled) {
                 cannonDebugger.update() // Update the CannonDebugger meshes
@@ -759,6 +783,7 @@ void main() {
             // sphereMesh.position.copy(sphereBody.position)
             // sphereMesh.quaternion.copy(sphereBody.quaternion)
 
+            let wasModified = false;
             world.contacts.forEach((contact) => {
                 if (contact.bj === heightfieldBody) {
                     const poz = new CANNON.Vec3();
@@ -779,17 +804,21 @@ void main() {
                         // let pp = mapNum(intersects2[0].distance, 0.0, heightScale, 1.0, 1.0)
                         // let pp = 1;
 
-                        draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
+                        wasModified |= draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
                     }
                 }
             });
             // console.log(world.contacts.length)
 
-            height2normal(contextD, contextN);
-            coloredMaterial.needsUpdate = true
-            heightfieldBody.removeShape(heightfieldShape);
-            setHeights(heightfieldShape, contextD, heightsElem, false)
-            heightfieldBody.addShape(heightfieldShape);
+            if (wasModified) {
+                height2normal(contextD, contextN);
+                coloredMaterial.needsUpdate = true
+                heightfieldBody.removeShape(heightfieldShape);
+                setHeights(heightfieldShape, contextD, heightsElem, true)
+                heightfieldBody.addShape(heightfieldShape);
+            } else {
+                // console.log("nothin changed")
+            }
 
             chassisMesh.position.copy(chassisBody.position)
             chassisMesh.quaternion.copy(chassisBody.quaternion)
