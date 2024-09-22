@@ -114,35 +114,6 @@ void main() {
         // Modify also <canvas>
         const textureSize = 128;
 
-        // function setHeights(heightfield, canvas, scale, update_h = false) {
-        //     const { x, z, y } = scale
-        //     const imageData = canvas.getImageData(0, 0, textureSize, textureSize)
-
-        //     const matrix = heightfield.data
-        //     matrix.length = 0
-        //     heightfield.elementSize = Math.abs(x) / imageData.width
-        //     for (let i = 0; i < imageData.height; i++) {
-        //         const row = []
-        //         for (let j = 0; j < imageData.width; j++) {
-        //             const a = imageData.data[(i * imageData.height + j) * 4]
-        //             const height = (((a) / 255) * z) + heightOffset
-        //             if (x < 0) {
-        //                 row.push(height)
-        //             } else {
-        //                 row.unshift(height)
-        //             }
-        //         }
-        //         if (y < 0) {
-        //             matrix.unshift(row)
-        //         } else {
-        //             matrix.push(row)
-        //         }
-        //     }
-        //     heightfield.updateMaxValue()
-        //     heightfield.updateMinValue()
-        //     heightfield.update()
-        // }
-
         function setHeights(heightfield, canvas, scale, update_h = false) {
             const { x, z, y } = scale;
             const imageData = canvas.getImageData(0, 0, textureSize, textureSize);
@@ -182,35 +153,6 @@ void main() {
             heightfield.update();
         }
 
-        // function setHeights(heightfield, canvas, scale, update_h = false) {
-        //     const { x, z, y } = scale
-        //     const imageData = canvas.getImageData(0, 0, textureSize, textureSize)
-
-        //     const matrix = heightfield.data
-        //     matrix.length = 0
-        //     heightfield.elementSize = Math.abs(x) / imageData.width
-        //     for (let i = 0; i < imageData.height; i++) {
-        //         const row = []
-        //         for (let j = 0; j < imageData.width; j++) {
-        //             const a = imageData.data[(i * imageData.height + j) * 4]
-        //             const height = (((a) / 255) * z) + heightOffset
-        //             if (x < 0) {
-        //                 row.push(height)
-        //             } else {
-        //                 row.unshift(height)
-        //             }
-        //         }
-        //         if (y < 0) {
-        //             matrix.unshift(row)
-        //         } else {
-        //             matrix.push(row)
-        //         }
-        //     }
-        //     heightfield.updateMaxValue()
-        //     heightfield.updateMinValue()
-        //     heightfield.update()
-        // }
-
         // Add three-mesh-bvh extensions
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
         THREE.BufferGeometry.prototype.diposeBoundsTree = disposeBoundsTree;
@@ -223,9 +165,7 @@ void main() {
 
         world.broadphase = new CANNON.SAPBroadphase(world);
         // world.defaultContactMaterial.friction = 0.2
-        // world.solver.iterations = 300;
-        // world.defaultContactMaterial.contactEquationRelaxation = 200;
-        // let shapeClone;
+
         const cannonDebugger = debugEnabled ? new CannonDebugger(scene, world, {color: 0xff0000, onUpdate: ((body, mesh, shape) => {
             // Force it to update shape
             if (debugMeshWasupdated) {
@@ -240,22 +180,12 @@ void main() {
             }
         })}) : undefined;
 
-        // const bodyMaterial = new CANNON.Material();
         const groundMaterial = new CANNON.Material();
-        // const bodyGroundContactMaterial = new CANNON.ContactMaterial(
-        //     bodyMaterial,
-        //     groundMaterial,
-        //     {
-        //         friction: 0.1,
-        //         restitution: 0.3
-        //     }
-        // )
-        // world.addContactMaterial(bodyGroundContactMaterial)
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-        camera.position.set(0, 0.75, 0.25)
-        // camera.position.set(-1.5, 2.5, -0.1)
-        // camera.rotation.set(-Math.PI / 2, -0.5, -Math.pi / 2)
+        camera.position.set(5, 3.89, -0.133)
+        camera.rotation.set(-0.554, 0.387, 0.22)
+        camera.quaternion.set(0.89, -0.2755, 0.3354, 0.103)
 
         const light = new THREE.DirectionalLight()
         light.position.set(1, 1, 1)
@@ -309,7 +239,7 @@ void main() {
 
         const coloredMaterial = new THREE.ShaderMaterial({
             wireframe: wireFrameEnabled,
-            side: THREE.DoubleSide,
+            // side: THREE.DoubleSide,
             uniforms: uniforms,
             vertexShader: document.getElementById('vertexShader').textContent,
             fragmentShader: document.getElementById('fragmentShader').textContent,
@@ -320,7 +250,6 @@ void main() {
         geometry.computeBoundsTree();
 
         plane.rotation.x = -Math.PI / 2
-        // plane.position.y += 0.01
         scene.add(plane)
 
         const groundBody = new CANNON.Body({
@@ -361,15 +290,9 @@ void main() {
         setHeights(heightfieldShape, contextD, heightsElem)
         const heightfieldBody = new CANNON.Body({ mass: 0, isTrigger: true, shape: heightfieldShape, type: CANNON.Body.STATIC })
 
-        // let heightfieldShape2 = new CANNON.Heightfield(matrix, {elementSize: 4})
-        // heightfieldBody.addShape(heightfieldShape2)
-
         heightfieldBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0.5 * Math.PI)
         heightfieldBody.position.set(snowGeomPlot / 2, -(heightOffset + heightOffset2), snowGeomPlot / 2);
 
-        // let heightfieldBox = new CANNON.Box(new CANNON.Vec3(snowGeomPlot, snowGeomPlot, snowGeomPlot));
-        // heightfieldBody.addShape(heightfieldBox);
-        
         world.addBody(heightfieldBody)
         
         function initDisplacement() {
@@ -458,9 +381,6 @@ void main() {
                     data[i] = clamp(0, data[i] - 1, increaseBy)
                     data[i + 1] = clamp(0, data[i + 1] - 1, increaseBy); // Green
                     data[i + 2] = clamp(0, data[i + 2] - 1, increaseBy); // Blue
-                    // data[i] = clamp(0, data[i], increaseBy)
-                    // data[i + 1] = clamp(0, data[i + 1], increaseBy); // Green
-                    // data[i + 2] = clamp(0, data[i + 2], increaseBy); // Blue
                 } else {
                     data[i] = clamp(0, 255, data[i] + increaseBy);     // Red
                     data[i + 1] = clamp(0, 255, data[i + 1] + increaseBy); // Green
@@ -535,17 +455,6 @@ void main() {
                 controls.enabled = false
                 ctrlDown = true
             }
-            //  else if (event.key === 'w') {
-                // sphereBody.velocity.z -= 0.1;
-                // Apply impulse
-                // sphereBody.applyImpulse(new CANNON.Vec3(0, 0, -0.1), sphereBody.position);
-            // } else if (event.key === 's') {
-            //     // sphereBody.applyImpulse(new CANNON.Vec3(0, 0, 0.1), sphereBody.position);
-            // } else if (event.key === 'd') {
-            //     // sphereBody.applyImpulse(new CANNON.Vec3(0.1, 0, 0.0), sphereBody.position);
-            // } else if (event.key === 'a') {
-            //     // sphereBody.applyImpulse(new CANNON.Vec3(-0.1, 0, 0.0), sphereBody.position);
-            // }
         })
 
         window.addEventListener('keyup', function (event) {
@@ -574,9 +483,6 @@ void main() {
         gui.add(controlParameters, 'resetDisplacement')
         gui.add(controlParameters, 'resetSphere')
 
-        // const car = new Car(scene, world);
-        // car.init();
-
         const mapNum = function (obj, in_min, in_max, out_min, out_max) {
             let val = (obj - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
             if (val < out_min) val = out_min;
@@ -593,7 +499,7 @@ void main() {
             }, timeout);
         }
 
-                // Build the car chassis
+        // Build the car chassis
         const axisWidth = 0.8
         const chassisDimensions = {
             x: axisWidth / 2,
@@ -602,11 +508,9 @@ void main() {
         };
         const chassisShape = new CANNON.Box(new CANNON.Vec3(chassisDimensions.x, chassisDimensions.y, chassisDimensions.z))
         const chassisBody = new CANNON.Body({ mass: 1 })
-        // const centerOfMassAdjust = new CANNON.Vec3(0, -0.1, 0)
         const centerOfMassAdjust = new CANNON.Vec3(0, 0, 0)
         chassisBody.addShape(chassisShape, centerOfMassAdjust)
         chassisBody.position.set(0, 10, 0)
-        // demo.addVisual(chassisBody)
 
         // Create the vehicle
         const vehicle = new CANNON.RigidVehicle({
@@ -616,8 +520,6 @@ void main() {
         const chassisGeom = new THREE.BoxGeometry(chassisDimensions.x * 2, chassisDimensions.y * 2, chassisDimensions.z * 2);
         const chassisMesh = new THREE.Mesh(chassisGeom, new THREE.MeshNormalMaterial())
         scene.add(chassisMesh)
-
-        // vehicle.position.set(0, -20, 0)
 
         const mass = 1
         const wheelShape = new CANNON.Sphere(0.1)
@@ -683,9 +585,6 @@ void main() {
         vehicle.wheelBodies.forEach((wheelBody) => {
           // Some damping to not spin wheels too fast
           wheelBody.angularDamping = 0.4
-
-          // Add visuals
-        //   demo.addVisual(wheelBody)
         })
 
         vehicle.addToWorld(world)
@@ -697,8 +596,6 @@ void main() {
         })
         world.addContactMaterial(wheel_ground)
 
-                // Keybindings
-        // Add force on keydown
         document.addEventListener('keydown', (event) => {
           const maxSteerVal = Math.PI / 8
           const maxSpeed = 0.5
@@ -780,9 +677,6 @@ void main() {
                 cannonDebugger.update() // Update the CannonDebugger meshes
             }
 
-            // sphereMesh.position.copy(sphereBody.position)
-            // sphereMesh.quaternion.copy(sphereBody.quaternion)
-
             let wasModified = false;
             world.contacts.forEach((contact) => {
                 if (contact.bj === heightfieldBody) {
@@ -795,20 +689,16 @@ void main() {
                     raycaster.ray.direction.set(0, -1, 0); // Point ray downwards (towards the plane)
                     let intersects2 = raycaster.intersectObject(plane, false)
                     if (intersects2.length > 0) {
-                        // displayDebugSphere(poz, 8);
-
-                        // let vv = mapNum(intersects2[0].distance, 0.0, 0.10, 1, 255)
                         let vv = mapNum(intersects2[0].distance, 0.0, heightScale, 0, 255)
-                        // vv -= 1;
                         let pp = mapNum(intersects2[0].distance, 0.0, 0.10, 1.95, 0.75)
-                        // let pp = mapNum(intersects2[0].distance, 0.0, heightScale, 1.0, 1.0)
-                        // let pp = 1;
-
-                        wasModified |= draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
+                        let drawModified = draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
+                        if (drawModified) {
+                            displayDebugSphere(poz, 8);
+                            wasModified = true;
+                        }
                     }
                 }
             });
-            // console.log(world.contacts.length)
 
             if (wasModified) {
                 height2normal(contextD, contextN);
@@ -816,8 +706,6 @@ void main() {
                 heightfieldBody.removeShape(heightfieldShape);
                 setHeights(heightfieldShape, contextD, heightsElem, true)
                 heightfieldBody.addShape(heightfieldShape);
-            } else {
-                // console.log("nothin changed")
             }
 
             chassisMesh.position.copy(chassisBody.position)
