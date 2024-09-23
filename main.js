@@ -12,6 +12,7 @@
 
         const wireFrameEnabled = false;
         const debugEnabled = false;
+        const showCollisions = false;
         const heightScale = 0.2;
         const heightOffset = 0.0;
         const heightOffset2 = 0.00;
@@ -396,16 +397,29 @@
             return val;
         }
 
-        const debugGeom = new THREE.SphereGeometry(0.01, 16, 16); // Small sphere with radius 0.1
-        const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green color
-        // FIXME: Instancing for this debug sphere
         function displayDebugSphere(position, timeout) {
-            const collisionSphere = new THREE.Mesh(debugGeom, debugMat);
-            collisionSphere.position.set(position.x, position.y, position.z);
-            scene.add(collisionSphere);
+            let writtenIdx = debugInstance.count;
+            debugInstance.setMatrixAt(writtenIdx, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
+            debugInstance.count++;
+            debugInstance.instanceMatrix.needsUpdate = true;
+
             setTimeout(() => {
-                scene.remove(collisionSphere);
+                if (debugInstance.count > 1) {
+                    let matrixCopy = new THREE.Matrix4();
+                    debugInstance.getMatrixAt(debugInstance.count - 1, matrixCopy)
+                    debugInstance.setMatrixAt(writtenIdx, matrixCopy);
+                    debugInstance.instanceMatrix.needsUpdate = true;
+                }
+                debugInstance.count--;
             }, timeout);
+        }
+
+        if (showCollisions) {
+            const debugGeom = new THREE.SphereGeometry(0.01, 4, 4); // Small sphere with radius 0.1
+            const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green color
+            const debugInstance = new THREE.InstancedMesh(debugGeom, debugMat, 3000);
+            debugInstance.count = 0;
+            scene.add(debugInstance);
         }
 
         // FIXME: Move all this car stuff into separate file
@@ -608,7 +622,9 @@
                         let pp = mapNum(intersects2[0].distance, 0.0, 0.10, 1.95, 0.75)
                         let drawModified = draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
                         if (drawModified) {
-                            displayDebugSphere(poz, 8);
+                            if (showCollisions) {
+                                displayDebugSphere(poz, 8);
+                            }
                             wasModified = true;
                         }
                     }
