@@ -77,7 +77,7 @@
         const world = new CANNON.World({gravity: new CANNON.Vec3(0, -9.81, 0)});
 
         world.broadphase = new CANNON.SAPBroadphase(world);
-        // world.defaultContactMaterial.friction = 0.2
+        world.defaultContactMaterial.friction = 2.0
 
         const cannonDebugger = debugEnabled ? new CannonDebugger(scene, world, {color: 0xff0000, onUpdate: ((body, mesh, shape) => {
             // Force it to update shape
@@ -447,20 +447,27 @@
         const radiusBottom = 0.2
         const height = 0.1
         const numSegments = 12
-        const cylinderShape = new CANNON.Cylinder(radiusTop, radiusBottom, height, numSegments)
+        const cylinderShape = new CANNON.Cylinder(radiusTop, radiusBottom, height / 4, numSegments)
+        const cylinderShape2 = new CANNON.Cylinder(radiusTop*1.2, radiusBottom*1.2, height / 4, numSegments)
+
+        const wheelMeshGeom = new THREE.CylinderGeometry(radiusTop, radiusBottom, height / 4, numSegments);
+        wheelMeshGeom.rotateY(-Math.PI / 2);
+        wheelMeshGeom.rotateX(-Math.PI / 2);
+        wheelMeshGeom.rotateZ(-Math.PI / 2);
+
+        const wheelMeshGeom2 = new THREE.CylinderGeometry(radiusTop*1.2, radiusBottom*1.2, height / 4, numSegments);
+        wheelMeshGeom2.rotateY(-Math.PI / 2);
+        wheelMeshGeom2.rotateX(-Math.PI / 2);
+        wheelMeshGeom2.rotateZ(-Math.PI / 2);
 
         const wheelBody1 = new CANNON.Body({ mass, material: wheelMaterial })
         wheelBody1.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
         vehicle.addWheel({
           body: wheelBody1,
-          position: new CANNON.Vec3(-wheelX, wheelY, axisWidth / 2).vadd(centerOfMassAdjust),
+          position: new CANNON.Vec3(-wheelX, wheelY, axisWidth / 2.2).vadd(centerOfMassAdjust),
           axis: new CANNON.Vec3(0, 0, 1),
           direction: down,
         })
-        const wheelMeshGeom = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, numSegments);
-        wheelMeshGeom.rotateY(-Math.PI / 2);
-        wheelMeshGeom.rotateX(-Math.PI / 2);
-        wheelMeshGeom.rotateZ(-Math.PI / 2);
         const wheelMesh1 = new THREE.Mesh(wheelMeshGeom, new THREE.MeshNormalMaterial())
         scene.add(wheelMesh1)
 
@@ -468,7 +475,7 @@
         wheelBody2.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
         vehicle.addWheel({
           body: wheelBody2,
-          position: new CANNON.Vec3(-wheelX, wheelY, -axisWidth / 2).vadd(centerOfMassAdjust),
+          position: new CANNON.Vec3(-wheelX, wheelY, -axisWidth / 2.2).vadd(centerOfMassAdjust),
           axis: new CANNON.Vec3(0, 0, -1),
           direction: down,
         })
@@ -476,25 +483,25 @@
         scene.add(wheelMesh2)
 
         const wheelBody3 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody3.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
+        wheelBody3.addShape(cylinderShape2, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
         vehicle.addWheel({
           body: wheelBody3,
-          position: new CANNON.Vec3(wheelX, wheelY, axisWidth / 2).vadd(centerOfMassAdjust),
+          position: new CANNON.Vec3(wheelX, wheelY, axisWidth / 1.2).vadd(centerOfMassAdjust),
           axis: new CANNON.Vec3(0, 0, 1),
           direction: down,
         })
-        const wheelMesh3 = new THREE.Mesh(wheelMeshGeom, new THREE.MeshNormalMaterial())
+        const wheelMesh3 = new THREE.Mesh(wheelMeshGeom2, new THREE.MeshNormalMaterial())
         scene.add(wheelMesh3)
 
         const wheelBody4 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody4.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
+        wheelBody4.addShape(cylinderShape2, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
         vehicle.addWheel({
           body: wheelBody4,
-          position: new CANNON.Vec3(wheelX, wheelY, -axisWidth / 2).vadd(centerOfMassAdjust),
+          position: new CANNON.Vec3(wheelX, wheelY, -axisWidth / 1.2).vadd(centerOfMassAdjust),
           axis: new CANNON.Vec3(0, 0, -1),
           direction: down,
         })
-        const wheelMesh4 = new THREE.Mesh(wheelMeshGeom, new THREE.MeshNormalMaterial())
+        const wheelMesh4 = new THREE.Mesh(wheelMeshGeom2, new THREE.MeshNormalMaterial())
         scene.add(wheelMesh4)
 
         vehicle.wheelBodies.forEach((wheelBody) => {
