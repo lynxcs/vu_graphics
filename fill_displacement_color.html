@@ -4,9 +4,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="author" content="Sean Bradley" />
-    <title>Draw a Displacement Map</title>
-    <meta name="description" content="Three.js TypeScript Tutorials by Sean Bradley : https://sbcode.net/threejs" />
+    <meta name="author" content="Domas Kalinauskas" />
+    <title>VU Graphics - Snow deformation</title>
     <style>
         body {
             overflow: hidden;
@@ -37,61 +36,11 @@
             visibility: hidden;
         }
     </style>
-    <script id="vertexShader" type="x-shader/x-vertex" src="/shaders/disp_color.vert">
-// attribute vec2 uv - provided by threejs
-
-uniform sampler2D bumpTexture; /* lookup in texture image */
-uniform float bumpScale; /* amount of vertex displacement by bumpTexture */
-
-/* Data shared to frag shader to produce gradient effect */
-varying float vAmount;
-varying vec2 vUv;
-
-void main() {
-    float bumpVal = texture2D(bumpTexture, uv).r;
-
-    float edgeFalloff = 0.01;
-
-    float uvFalloffX = smoothstep(0.0, edgeFalloff, uv.x) * smoothstep(1.0, 1.0 - edgeFalloff, uv.x);
-    float uvFalloffY = smoothstep(0.0, edgeFalloff, uv.y) * smoothstep(1.0, 1.0 - edgeFalloff, uv.y);
-    float edgeFalloffFactor = min(uvFalloffX, uvFalloffY);
-    // Compute distance to the nearest corner to add a smooth corner falloff effect
-    vec2 uvToCornerDist = min(uv, 1.0 - uv);  // Distance from UV to nearest corner (either 0 or 1)
-    float cornerFalloff = smoothstep(0.0, edgeFalloff * 1.9, length(uvToCornerDist));
-
-    // Combine edge and corner falloff for a smoother transition
-    float totalFalloff = min(edgeFalloffFactor, cornerFalloff);
-
-    // Create the triangle-esque shape by using a normalized falloff
-    vAmount = max(0.001, bumpVal) * totalFalloff;
-    vec3 newPosition = position + normal * bumpScale * vAmount;
-
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-    vUv = uv;
-}
-    </script>
-    <script id="fragmentShader" type="x-shader/x-vertex" src="/shaders/disp_color.frag">
-        varying float vAmount;
-        varying vec2 vUv;
-
-        uniform sampler2D colorMap;
-
-        void main() {
-            // vec3 snow_bottom = smoothstep(0.01, 0.75, vAmount) - smoothstep(0.20, 0.21, vAmount) * vec3(0.5, 0.5, 0.5);
-            // vec3 snow = smoothstep(0.70, 0.8, vAmount) * vec3(1.0, 1.0, 1.0);
-            vec3 white_color = vec3(1.0, 1.0, 1.0);
-            vec3 darker_white_color = vec3(0.5, 0.5, 0.5);
-            vec3 snow = mix(darker_white_color, white_color, smoothstep(0.01, 0.99, vAmount) * vec3(1.0, 1.0, 1.0));
-        
-            gl_FragColor = texture( colorMap, vUv) * vec4(snow, 1.0);
-            // gl_FragColor = vec4(snow, 1.0);
-        }
-    </script>
 </head>
 
 <body>
     <div id="instructions">
-        Hold down <kbd>CTRL</kbd> key<br /> and
+        Hold down <kbd>SHIFT</kbd> key<br /> and
         left mouse button to draw.
     </div>
     <canvas id="canvasD" height="128" width="128"></canvas>
@@ -105,6 +54,8 @@ void main() {
         import * as CANNON from 'cannon-es'
         import CannonDebugger from 'cannon-es-debugger'
         import Car from './car.js'
+        import displacementVertexShader from './shaders/disp_color.vert?raw'
+        import displacementFragmentShader from './shaders/disp_color.frag?raw'
 
         const wireFrameEnabled = false;
         const debugEnabled = false;
@@ -239,10 +190,9 @@ void main() {
 
         const coloredMaterial = new THREE.ShaderMaterial({
             wireframe: wireFrameEnabled,
-            // side: THREE.DoubleSide,
             uniforms: uniforms,
-            vertexShader: document.getElementById('vertexShader').textContent,
-            fragmentShader: document.getElementById('fragmentShader').textContent,
+            vertexShader: displacementVertexShader,
+            fragmentShader: displacementFragmentShader,
         });
 
         const plane = new THREE.Mesh(geometry, coloredMaterial)
@@ -490,6 +440,9 @@ void main() {
             return val;
         }
 
+        const debugGeom = new THREE.SphereGeometry(0.01, 16, 16); // Small sphere with radius 0.1
+        const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green color
+        // FIXME: Instancing for this debug sphere
         function displayDebugSphere(position, timeout) {
             const collisionSphere = new THREE.Mesh(debugGeom, debugMat);
             collisionSphere.position.set(position.x, position.y, position.z);
@@ -499,7 +452,7 @@ void main() {
             }, timeout);
         }
 
-        // Build the car chassis
+        // FIXME: Move all this car stuff into separate file
         const axisWidth = 0.8
         const chassisDimensions = {
             x: axisWidth / 2,
@@ -597,9 +550,9 @@ void main() {
         world.addContactMaterial(wheel_ground)
 
         document.addEventListener('keydown', (event) => {
-          const maxSteerVal = Math.PI / 8
-          const maxSpeed = 0.5
-          const maxForce = 1
+          const maxSteerVal = Math.PI / 10
+          const maxSpeed = 1.0
+          const maxForce = 1.5
 
           switch (event.key) {
             case 'w':
@@ -610,8 +563,8 @@ void main() {
 
             case 's':
             case 'ArrowDown':
-              vehicle.setWheelForce(-maxForce / 2, 2)
-              vehicle.setWheelForce(maxForce / 2, 3)
+              vehicle.setWheelForce(-maxForce / 1.25, 2)
+              vehicle.setWheelForce(maxForce / 1.25, 3)
               break
 
             case 'a':
@@ -657,7 +610,6 @@ void main() {
           }
         })
 
-        let maxEncounteredDist = 0;
         function animate() {
             requestAnimationFrame(animate)
 
@@ -725,9 +677,6 @@ void main() {
         function render() {
             renderer.render(scene, camera)
         }
-
-        const debugGeom = new THREE.SphereGeometry(0.01, 16, 16); // Small sphere with radius 0.1
-        const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green color
 
         animate()
     </script>
