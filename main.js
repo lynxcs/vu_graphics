@@ -139,12 +139,6 @@
 
         const snowGeomPlot = 8;
         const geometry = new THREE.PlaneGeometry(snowGeomPlot, snowGeomPlot, textureSize, textureSize)
-        const material = new THREE.MeshStandardMaterial({
-            displacementMap: displacementMap,
-            displacementScale: 0.1,
-            normalMap: normalMap,
-            color: 0x00FF00
-        })
 
         const uniforms = {
             bumpTexture: { value: displacementMap },
@@ -214,10 +208,9 @@
             contextN.fillRect(0, 0, textureSize, textureSize)
             contextD.fillStyle = '#FFFFFF'
             contextD.fillRect(0, 0, textureSize, textureSize)
-            material.needsUpdate = true
-            material.displacementMap.needsUpdate = true
+            coloredMaterial.needsUpdate = true
+            displacementMap.needsUpdate = true;
             height2normal(contextD, contextN);
-            material.normalMap.needsUpdate = true
         }
         
         const controlParameters = {
@@ -324,11 +317,10 @@
 
             var was_modified = increasePixelValues(top_left_x, top_left_y, bpow, bpow, powpow, contextD, increaseTo)
             if (was_modified) {
-                material.needsUpdate = true
-                material.displacementMap.needsUpdate = true
+                coloredMaterial.needsUpdate = true
+                displacementMap.needsUpdate = true;
                 if (update_n) {
                     height2normal(contextD, contextN);
-                    coloredMaterial.needsUpdate = true
                 }
                 if (set_h) {
                     heightfieldBody.removeShape(heightfieldShape);
