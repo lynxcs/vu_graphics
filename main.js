@@ -8,6 +8,8 @@
         import displacementVertexShader from './shaders/disp_color.vert?raw'
         import displacementFragmentShader from './shaders/disp_color.frag?raw'
 
+        import snowTextureUrl from './textures/smooth_snow.jpg'
+
         const wireFrameEnabled = false;
         const debugEnabled = false;
         const heightScale = 0.2;
@@ -133,7 +135,7 @@
         const displacementMap = new THREE.CanvasTexture(canvasD)
         const normalMap = new THREE.CanvasTexture(canvasN)
 
-        const colorMap = new THREE.TextureLoader().load('smooth_snow.jpg');
+        const colorMap = new THREE.TextureLoader().load(snowTextureUrl);
 
         const snowGeomPlot = 8;
         const geometry = new THREE.PlaneGeometry(snowGeomPlot, snowGeomPlot, textureSize, textureSize)
