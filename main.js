@@ -8,7 +8,7 @@
         import displacementVertexShader from './shaders/disp_color.vert?raw'
         import displacementFragmentShader from './shaders/disp_color.frag?raw'
 
-        import snowTextureUrl from './textures/smooth_snow.jpg'
+        import snowTextureUrl from './textures/snow6_color.png'
 
         const wireFrameEnabled = false;
         const debugEnabled = false;
