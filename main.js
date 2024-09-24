@@ -2,7 +2,7 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import Stats from 'three/examples/jsm/libs/stats.module.js';
         import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-        import { computeBoundsTree, disposeBoundsTree, computeBatchedBoundsTree, disposeBatchedBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+        import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
         import * as CANNON from 'cannon-es'
         import CannonDebugger from 'cannon-es-debugger'
         import Vehicle from './vehicle.js'
@@ -84,7 +84,7 @@
         world.defaultContactMaterial.friction = 2.0
 
         const cannonDebugger = debugEnabled ? new CannonDebugger(scene, world, {color: 0xff0000, onUpdate: ((body, mesh, shape) => {
-            // Force it to update shape
+            // Force it to update shap
             if (debugMeshWasupdated) {
                 if (shape.type == 32) {
                     if (body.shapes.length == 1) {
@@ -111,8 +111,7 @@
         scene.background = new THREE.Color( 0xa0a0a0 );
 		scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
 
-        //const newlight = new THREE.
-        const light2 = new THREE.AmbientLight( 0x404040 ); // soft white light
+        const light2 = new THREE.AmbientLight( 0x404040 );
         scene.add( light2 );
 
         const renderer = new THREE.WebGLRenderer({ antialias: true})
@@ -163,11 +162,11 @@
         scene.add(plane)
 
         const groundBody = new CANNON.Body({
-            type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
+            type: CANNON.Body.STATIC,
             shape: new CANNON.Plane(),
             material: groundMaterial,
         })
-        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // make it face up
+        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
         world.addBody(groundBody)
 
         const raycaster = new THREE.Raycaster()
@@ -220,9 +219,6 @@
             brushPower: -1,
             resetDisplacement: function() {
                 initDisplacement();
-            },
-            resetVehicle: function() {
-                vehicle.reset();
             },
         };
 
@@ -382,8 +378,6 @@
         gui.add(controlParameters, 'brushSize', 1, 64, 1)
         gui.add(controlParameters, 'brushPower', -255, 255, 1)
         gui.add(controlParameters, 'resetDisplacement')
-        gui.add(controlParameters, 'resetVehicle')
-        // gui.addFolder('Vehicle')
 
         const mapNum = function (obj, in_min, in_max, out_min, out_max) {
             let val = (obj - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -416,7 +410,7 @@
             scene.add(debugInstance);
         }
 
-        const vehicle = new Vehicle(scene, world, groundMaterial, {
+        const vehicleParams = {
             mass: 1,
             axis_width: 0.7,
             chassis_y: 0.25,
@@ -429,6 +423,33 @@
             back_wheel_radius: 0.2,
             back_wheel_height: 0.1,
             back_wheel_z_scale: 1.2,
+        };
+
+        var vehicle = new Vehicle(scene, world, groundMaterial, vehicleParams);
+
+        const vehicleFunctions = {
+            resetVehicle: function() {
+                vehicle.reset();
+            },
+        };
+
+        const vehicleFolder = gui.addFolder('Vehicle')
+        vehicleFolder.add(vehicleParams, 'mass', 0.1, 10, 0.1)
+        vehicleFolder.add(vehicleParams, 'axis_width', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'chassis_y', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'chassis_z', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'wheel_x', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'wheel_y', -2, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'front_wheel_radius', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'front_wheel_height', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'front_wheel_z_scale', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'back_wheel_radius', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'back_wheel_height', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleParams, 'back_wheel_z_scale', 0.1, 2, 0.1)
+        vehicleFolder.add(vehicleFunctions, 'resetVehicle')
+        vehicleFolder.onFinishChange(function() {
+                vehicle.dispose();
+                vehicle = new Vehicle(scene, world, groundMaterial, vehicleParams);
         });
 
         function animate() {
@@ -447,7 +468,7 @@
             world.fixedStep(1 / 60)
 
             if (debugEnabled) {
-                cannonDebugger.update() // Update the CannonDebugger meshes
+                cannonDebugger.update()
             }
 
             let wasModified = false;

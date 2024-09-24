@@ -170,6 +170,7 @@ export default class Vehicle {
         this.scene.remove(this.wheelMesh2);
         this.scene.remove(this.wheelMesh3);
         this.scene.remove(this.wheelMesh4);
+        this.vehicle.removeFromWorld(this.world);
     }
 
     reset() {
