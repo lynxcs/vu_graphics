@@ -16,8 +16,7 @@
         const heightScale = 0.2;
         const heightOffset = 0.0;
         const heightOffset2 = 0.00;
-        // Modify also <canvas>
-        const textureSize = 128;
+        const textureSize = 256;
         
         function generateCanvasElement(width, height, id) {
             let elem = document.createElement('canvas');
@@ -138,7 +137,7 @@
 
         const colorMap = new THREE.TextureLoader().load(snowTextureUrl);
 
-        const snowGeomPlot = 8;
+        const snowGeomPlot = 16;
         const geometry = new THREE.PlaneGeometry(snowGeomPlot, snowGeomPlot, textureSize, textureSize)
 
         const uniforms = {
