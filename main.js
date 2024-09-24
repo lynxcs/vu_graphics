@@ -5,6 +5,8 @@
         import { computeBoundsTree, disposeBoundsTree, computeBatchedBoundsTree, disposeBatchedBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
         import * as CANNON from 'cannon-es'
         import CannonDebugger from 'cannon-es-debugger'
+        import Vehicle from './vehicle.js'
+
         import displacementVertexShader from './shaders/disp_color.vert?raw'
         import displacementFragmentShader from './shaders/disp_color.frag?raw'
 
@@ -235,13 +237,10 @@
 
             for (var i = 0, l = width * height * 4; i < l; i += 4) {
                 var x1, x2, y1, y2
-
                 if (i % (width * 4) == 0) {
-                    // left edge
                     x1 = src.data[i]
                     x2 = src.data[i + 4]
                 } else if (i % (width * 4) == (width - 1) * 4) {
-                    // right edge
                     x1 = src.data[i - 4]
                     x2 = src.data[i]
                 } else {
@@ -250,11 +249,9 @@
                 }
 
                 if (i < width * 4) {
-                    // top edge
                     y1 = src.data[i]
                     y2 = src.data[i + width * 4]
                 } else if (i > width * (height - 1) * 4) {
-                    // bottom edge
                     y1 = src.data[i - width * 4]
                     y2 = src.data[i]
                 } else {
@@ -309,11 +306,11 @@
             const top_left_cast_x = uv.x * textureSize;
             const top_left_cast_y = textureSize - uv.y * textureSize;
 
-            const top_left_x = top_left_cast_x - controlParameters.brushSize / 2;
-            const top_left_y = top_left_cast_y - controlParameters.brushSize / 2;
-
-            const powpow = intensity === 0.0 ? controlParameters.brushPower : intensity;
             const bpow = sizePow === 0.0 ? controlParameters.brushSize : sizePow;
+            const powpow = intensity === 0.0 ? controlParameters.brushPower : intensity;
+
+            const top_left_x = top_left_cast_x - (bpow / 2);
+            const top_left_y = top_left_cast_y - (bpow / 2);
 
             var was_modified = increasePixelValues(top_left_x, top_left_y, bpow, bpow, powpow, contextD, increaseTo)
             if (was_modified) {
@@ -420,170 +417,20 @@
             scene.add(debugInstance);
         }
 
-        // FIXME: Move all this car stuff into separate file
-        const axisWidth = 0.8
-        const chassisDimensions = {
-            x: axisWidth / 2,
-            y: 0.25,
-            z: 0.345
-        };
-        const chassisShape = new CANNON.Box(new CANNON.Vec3(chassisDimensions.x, chassisDimensions.y, chassisDimensions.z))
-        const chassisBody = new CANNON.Body({ mass: 1 })
-        const centerOfMassAdjust = new CANNON.Vec3(0, 0, 0)
-        chassisBody.addShape(chassisShape, centerOfMassAdjust)
-        chassisBody.position.set(0, 10, 0)
-
-        // Create the vehicle
-        const vehicle = new CANNON.RigidVehicle({
-          chassisBody,
-        })
-
-        const chassisGeom = new THREE.BoxGeometry(chassisDimensions.x * 2, chassisDimensions.y * 2, chassisDimensions.z * 2);
-        const chassisMesh = new THREE.Mesh(chassisGeom, new THREE.MeshNormalMaterial())
-        scene.add(chassisMesh)
-
-        const mass = 1
-        const wheelShape = new CANNON.Sphere(0.1)
-        const wheelMaterial = new CANNON.Material('wheel')
-        const down = new CANNON.Vec3(0, -1, 0)
-        const wheelX = 0.4
-        const wheelY = -0.2
-
-        const radiusTop = 0.2
-        const radiusBottom = 0.2
-        const height = 0.1
-        const numSegments = 12
-        const cylinderShape = new CANNON.Cylinder(radiusTop, radiusBottom, height / 4, numSegments)
-        const cylinderShape2 = new CANNON.Cylinder(radiusTop*1.2, radiusBottom*1.2, height / 4, numSegments)
-
-        const wheelMeshGeom = new THREE.CylinderGeometry(radiusTop, radiusBottom, height / 4, numSegments);
-        wheelMeshGeom.rotateY(-Math.PI / 2);
-        wheelMeshGeom.rotateX(-Math.PI / 2);
-        wheelMeshGeom.rotateZ(-Math.PI / 2);
-
-        const wheelMeshGeom2 = new THREE.CylinderGeometry(radiusTop*1.2, radiusBottom*1.2, height / 4, numSegments);
-        wheelMeshGeom2.rotateY(-Math.PI / 2);
-        wheelMeshGeom2.rotateX(-Math.PI / 2);
-        wheelMeshGeom2.rotateZ(-Math.PI / 2);
-
-        const wheelBody1 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody1.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
-        vehicle.addWheel({
-          body: wheelBody1,
-          position: new CANNON.Vec3(-wheelX, wheelY, axisWidth / 2.2).vadd(centerOfMassAdjust),
-          axis: new CANNON.Vec3(0, 0, 1),
-          direction: down,
-        })
-        const wheelMesh1 = new THREE.Mesh(wheelMeshGeom, new THREE.MeshNormalMaterial())
-        scene.add(wheelMesh1)
-
-        const wheelBody2 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody2.addShape(cylinderShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
-        vehicle.addWheel({
-          body: wheelBody2,
-          position: new CANNON.Vec3(-wheelX, wheelY, -axisWidth / 2.2).vadd(centerOfMassAdjust),
-          axis: new CANNON.Vec3(0, 0, -1),
-          direction: down,
-        })
-        const wheelMesh2 = new THREE.Mesh(wheelMeshGeom, new THREE.MeshNormalMaterial())
-        scene.add(wheelMesh2)
-
-        const wheelBody3 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody3.addShape(cylinderShape2, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
-        vehicle.addWheel({
-          body: wheelBody3,
-          position: new CANNON.Vec3(wheelX, wheelY, axisWidth / 1.2).vadd(centerOfMassAdjust),
-          axis: new CANNON.Vec3(0, 0, 1),
-          direction: down,
-        })
-        const wheelMesh3 = new THREE.Mesh(wheelMeshGeom2, new THREE.MeshNormalMaterial())
-        scene.add(wheelMesh3)
-
-        const wheelBody4 = new CANNON.Body({ mass, material: wheelMaterial })
-        wheelBody4.addShape(cylinderShape2, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2))
-        vehicle.addWheel({
-          body: wheelBody4,
-          position: new CANNON.Vec3(wheelX, wheelY, -axisWidth / 1.2).vadd(centerOfMassAdjust),
-          axis: new CANNON.Vec3(0, 0, -1),
-          direction: down,
-        })
-        const wheelMesh4 = new THREE.Mesh(wheelMeshGeom2, new THREE.MeshNormalMaterial())
-        scene.add(wheelMesh4)
-
-        vehicle.wheelBodies.forEach((wheelBody) => {
-          // Some damping to not spin wheels too fast
-          wheelBody.angularDamping = 0.4
-        })
-
-        vehicle.addToWorld(world)
-
-        const wheel_ground = new CANNON.ContactMaterial(wheelMaterial, groundMaterial, {
-          friction: 0.3,
-          restitution: 0,
-          contactEquationStiffness: 1000,
-        })
-        world.addContactMaterial(wheel_ground)
-
-        document.addEventListener('keydown', (event) => {
-          const maxSteerVal = Math.PI / 10
-          const maxSpeed = 1.0
-          const maxForce = 1.5
-
-          switch (event.key) {
-            case 'w':
-            case 'ArrowUp':
-              vehicle.setWheelForce(maxForce, 2)
-              vehicle.setWheelForce(-maxForce, 3)
-              break
-
-            case 's':
-            case 'ArrowDown':
-              vehicle.setWheelForce(-maxForce / 1.25, 2)
-              vehicle.setWheelForce(maxForce / 1.25, 3)
-              break
-
-            case 'a':
-            case 'ArrowLeft':
-              vehicle.setSteeringValue(maxSteerVal, 0)
-              vehicle.setSteeringValue(maxSteerVal, 1)
-              break
-
-            case 'd':
-            case 'ArrowRight':
-              vehicle.setSteeringValue(-maxSteerVal, 0)
-              vehicle.setSteeringValue(-maxSteerVal, 1)
-              break
-          }
-        })
-
-        // Reset force on keyup
-        document.addEventListener('keyup', (event) => {
-          switch (event.key) {
-            case 'w':
-            case 'ArrowUp':
-              vehicle.setWheelForce(0, 2)
-              vehicle.setWheelForce(0, 3)
-              break
-
-            case 's':
-            case 'ArrowDown':
-              vehicle.setWheelForce(0, 2)
-              vehicle.setWheelForce(0, 3)
-              break
-
-            case 'a':
-            case 'ArrowLeft':
-              vehicle.setSteeringValue(0, 0)
-              vehicle.setSteeringValue(0, 1)
-              break
-
-            case 'd':
-            case 'ArrowRight':
-              vehicle.setSteeringValue(0, 0)
-              vehicle.setSteeringValue(0, 1)
-              break
-          }
-        })
+        const vehicle = new Vehicle(scene, world, groundMaterial, {
+            mass: 1,
+            axis_width: 0.7,
+            chassis_y: 0.25,
+            chassis_z: 0.445,
+            wheel_x: 0.4,
+            wheel_y: -0.2,
+            front_wheel_radius: 0.2,
+            front_wheel_height: 0.1,
+            front_wheel_z_scale: 1.2,
+            back_wheel_radius: 0.2,
+            back_wheel_height: 0.1,
+            back_wheel_z_scale: 1.2,
+        });
 
         function animate() {
             requestAnimationFrame(animate)
@@ -618,7 +465,7 @@
                     let intersects2 = raycaster.intersectObject(plane, false)
                     if (intersects2.length > 0) {
                         let vv = mapNum(intersects2[0].distance, 0.0, heightScale, 0, 255)
-                        let pp = mapNum(intersects2[0].distance, 0.0, 0.10, 1.95, 0.75)
+                        let pp = mapNum(intersects2[0].distance, 0.0, 0.10, 1.45, 0.75)
                         let drawModified = draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
                         if (drawModified) {
                             displayDebugSphere(poz);
@@ -636,16 +483,7 @@
                 heightfieldBody.addShape(heightfieldShape);
             }
 
-            chassisMesh.position.copy(chassisBody.position)
-            chassisMesh.quaternion.copy(chassisBody.quaternion)
-            wheelMesh1.position.copy(wheelBody1.position)
-            wheelMesh1.quaternion.copy(wheelBody1.quaternion)
-            wheelMesh2.position.copy(wheelBody2.position)
-            wheelMesh2.quaternion.copy(wheelBody2.quaternion)
-            wheelMesh3.position.copy(wheelBody3.position)
-            wheelMesh3.quaternion.copy(wheelBody3.quaternion)
-            wheelMesh4.position.copy(wheelBody4.position)
-            wheelMesh4.quaternion.copy(wheelBody4.quaternion)
+            vehicle.update();
 
             render()
         }
