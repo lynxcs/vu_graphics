@@ -221,9 +221,8 @@
             resetDisplacement: function() {
                 initDisplacement();
             },
-            resetSphere: function() {
-                sphereBody.position.set(0, 10, 0);
-                sphereBody.velocity.set(0, 0, 0);
+            resetVehicle: function() {
+                vehicle.reset();
             },
         };
 
@@ -380,11 +379,11 @@
         document.body.appendChild(stats.dom)
 
         const gui = new GUI()
-        gui.add(coloredMaterial.uniforms.bumpScale, 'value', 0.01, 0.8, 0.01)
         gui.add(controlParameters, 'brushSize', 1, 64, 1)
         gui.add(controlParameters, 'brushPower', -255, 255, 1)
         gui.add(controlParameters, 'resetDisplacement')
-        gui.add(controlParameters, 'resetSphere')
+        gui.add(controlParameters, 'resetVehicle')
+        // gui.addFolder('Vehicle')
 
         const mapNum = function (obj, in_min, in_max, out_min, out_max) {
             let val = (obj - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;

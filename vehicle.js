@@ -172,6 +172,13 @@ export default class Vehicle {
         this.scene.remove(this.wheelMesh4);
     }
 
+    reset() {
+        this.vehicle.chassisBody.position.set(0, 4, 0)
+        this.vehicle.wheelBodies.forEach((wheelBody) => {
+            wheelBody.position.set(0, 4, 0)
+        });
+    }
+
     update() {
         this.chassisMesh.position.copy(this.chassisBody.position)
         this.chassisMesh.quaternion.copy(this.chassisBody.quaternion)
