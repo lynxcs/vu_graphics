@@ -396,27 +396,26 @@
             return val;
         }
 
-        function displayDebugSphere(position, timeout) {
-            let writtenIdx = debugInstance.count;
-            debugInstance.setMatrixAt(writtenIdx, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
-            debugInstance.count++;
-            debugInstance.instanceMatrix.needsUpdate = true;
-
-            setTimeout(() => {
-                if (debugInstance.count > 1) {
-                    let matrixCopy = new THREE.Matrix4();
-                    debugInstance.getMatrixAt(debugInstance.count - 1, matrixCopy)
-                    debugInstance.setMatrixAt(writtenIdx, matrixCopy);
-                    debugInstance.instanceMatrix.needsUpdate = true;
-                }
-                debugInstance.count--;
-            }, timeout);
+        function displayDebugSphere(position) {
+            if (showCollisions) {
+                let writtenIdx = debugInstance.count;
+                debugInstance.setMatrixAt(writtenIdx, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
+                debugInstance.count++;
+                debugInstance.instanceMatrix.needsUpdate = true;
+            }
+        }
+        
+        function clearDebugSpheres() {
+            if (showCollisions) {
+                debugInstance.count = 0;
+                debugInstance.instanceMatrix.needsUpdate = true;
+            }
         }
 
+        const debugGeom = showCollisions? new THREE.SphereGeometry(0.01, 4, 4) : undefined; // Small sphere with radius 0.1
+        const debugMat = showCollisions ? new THREE.MeshBasicMaterial({ color: 0x00ff00 }) : undefined; // Green color
+        const debugInstance = showCollisions ? new THREE.InstancedMesh(debugGeom, debugMat, 3000) : undefined;
         if (showCollisions) {
-            const debugGeom = new THREE.SphereGeometry(0.01, 4, 4); // Small sphere with radius 0.1
-            const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Green color
-            const debugInstance = new THREE.InstancedMesh(debugGeom, debugMat, 3000);
             debugInstance.count = 0;
             scene.add(debugInstance);
         }
@@ -606,6 +605,7 @@
             }
 
             let wasModified = false;
+            clearDebugSpheres(); // clear last frames debug spheres
             world.contacts.forEach((contact) => {
                 if (contact.bj === heightfieldBody) {
                     const poz = new CANNON.Vec3();
@@ -621,9 +621,7 @@
                         let pp = mapNum(intersects2[0].distance, 0.0, 0.10, 1.95, 0.75)
                         let drawModified = draw(intersects2[0].uv, false, false, vv, true, Math.round(pp));
                         if (drawModified) {
-                            if (showCollisions) {
-                                displayDebugSphere(poz, 8);
-                            }
+                            displayDebugSphere(poz);
                             wasModified = true;
                         }
                     }
