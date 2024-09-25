@@ -16,8 +16,6 @@
         const debugEnabled = false;
         const showCollisions = false;
         const heightScale = 0.2;
-        const heightOffset = 0.0;
-        const heightOffset2 = 0.00;
         const textureSize = 256;
         
         function generateCanvasElement(width, height, id) {
@@ -51,7 +49,7 @@
                 const matrixRow = matrix[y < 0 ? imageData.height - 1 - i : i];
                 for (let j = 0; j < imageData.width; j++) {
                     const a = imageData.data[(dataOffset + j) * 4];
-                    const height = (((a) / 255) * z) + heightOffset;
+                    const height = (((a) / 255) * z);
                     const colIdx = x < 0 ? j : imageData.width - 1 - j;
 
                     if (height < lowest) {
@@ -200,7 +198,7 @@
         const heightfieldBody = new CANNON.Body({ mass: 0, isTrigger: true, shape: heightfieldShape, type: CANNON.Body.STATIC })
 
         heightfieldBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0.5 * Math.PI)
-        heightfieldBody.position.set(snowGeomPlot / 2, -(heightOffset + heightOffset2), snowGeomPlot / 2);
+        heightfieldBody.position.set(snowGeomPlot / 2, 0, snowGeomPlot / 2);
 
         world.addBody(heightfieldBody)
         
@@ -278,12 +276,12 @@
                 var data_r = data[i];
                 if (increaseTo) {
                     data[i] = clamp(0, data[i] - 1, increaseBy)
-                    data[i + 1] = clamp(0, data[i + 1] - 1, increaseBy); // Green
-                    data[i + 2] = clamp(0, data[i + 2] - 1, increaseBy); // Blue
+                    data[i + 1] = clamp(0, data[i + 1] - 1, increaseBy);
+                    data[i + 2] = clamp(0, data[i + 2] - 1, increaseBy);
                 } else {
-                    data[i] = clamp(0, 255, data[i] + increaseBy);     // Red
-                    data[i + 1] = clamp(0, 255, data[i + 1] + increaseBy); // Green
-                    data[i + 2] = clamp(0, 255, data[i + 2] + increaseBy); // Blue
+                    data[i] = clamp(0, 255, data[i] + increaseBy);
+                    data[i + 1] = clamp(0, 255, data[i + 1] + increaseBy);
+                    data[i + 2] = clamp(0, 255, data[i + 2] + increaseBy);
                 }
                 if (data_r !== data[i]) {
                     modified = true;

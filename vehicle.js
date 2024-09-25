@@ -193,4 +193,7 @@ export default class Vehicle {
         this.wheelMesh4.quaternion.copy(this.wheelBody4.quaternion)
     }
 }
-    
+
+// Pasiskolint 3D modelio
+// Ratai su dantukais
+// Ataskaita ±3 pls
