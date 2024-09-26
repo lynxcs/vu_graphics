@@ -13,7 +13,7 @@
         import snowTextureUrl from './textures/snow6_color.png'
 
         const wireFrameEnabled = false;
-        const debugEnabled = false;
+        const debugEnabled = true;
         const showCollisions = false;
         const heightScale = 0.2;
         const textureSize = 256;
@@ -200,7 +200,7 @@
         heightfieldBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0.5 * Math.PI)
         heightfieldBody.position.set(snowGeomPlot / 2, 0, snowGeomPlot / 2);
 
-        world.addBody(heightfieldBody)
+        // world.addBody(heightfieldBody)
         
         function initDisplacement() {
             contextN.fillStyle = '#7f7fff'
@@ -413,14 +413,14 @@
             axis_width: 0.7,
             chassis_y: 0.25,
             chassis_z: 0.445,
-            wheel_x: 0.4,
-            wheel_y: -0.2,
+            wheel_x: 0.25,
+            wheel_y: -0.05,
             front_wheel_radius: 0.2,
-            front_wheel_height: 0.1,
+            front_wheel_height: 0.3,
             front_wheel_z_scale: 1.2,
             back_wheel_radius: 0.2,
-            back_wheel_height: 0.1,
-            back_wheel_z_scale: 1.2,
+            back_wheel_height: 0.15,
+            back_wheel_z_scale: 2.2,
         };
 
         var vehicle = new Vehicle(scene, world, groundMaterial, vehicleParams);

@@ -4,7 +4,8 @@
     "cannon-es": "^0.20.0",
     "cannon-es-debugger": "^1.0.0",
     "three": "^0.168.0",
-    "three-mesh-bvh": "^0.8.0"
+    "three-mesh-bvh": "^0.8.0",
+    "three-to-cannon": "^5.0.2"
   },
   "devDependencies": {
     "sharp": "^0.33.5",
