@@ -37,9 +37,10 @@ export default class Vehicle {
         let down = new CANNON.Vec3(0, -1, 0);
         const numSegments = 16;
 
-        // const wheelBodyConversion = threeToCannon(this.wheelMesh, {type: ShapeType.HULL})
         const wheelShape = new CANNON.Cylinder(vehicleOptions.back_wheel_radius, vehicleOptions.back_wheel_radius, vehicleOptions.back_wheel_height, numSegments);
-        let createWheelBody = function () { let body = new CANNON.Body({ mass: vehicleOptions.mass, material: wheelMaterial, }); body.addShape(wheelShape, new CANNON.Vec3(0, 0, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2)); return body; }
+        let createWheelBody = function () { let body = new CANNON.Body({ mass: vehicleOptions.mass, material: wheelMaterial, }); body.addShape(wheelShape, new CANNON.Vec3(-0.005, 0.007, 0), new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2)); return body; }
+        // const wheelBodyConversion = threeToCannon(this.wheelMesh, {type: ShapeType.CYLINDER})
+        // let createWheelBody = function () { let body = new CANNON.Body({ mass: vehicleOptions.mass, material: wheelMaterial, }); body.addShape(wheelBodyConversion.shape, wheelBodyConversion.offset, new CANNON.Quaternion().setFromEuler(0, -Math.PI / 2, -Math.PI / 2)); return body; }
         // const backWheelGeom = new THREE.CylinderGeometry(vehicleOptions.back_wheel_radius, vehicleOptions.back_wheel_radius, vehicleOptions.back_wheel_height, numSegments);
         // backWheelGeom.rotateY(-Math.PI / 2);
         // backWheelGeom.rotateX(-Math.PI / 2);
@@ -51,10 +52,11 @@ export default class Vehicle {
         // frontWheelGeom.rotateX(-Math.PI / 2);
         // frontWheelGeom.rotateZ(-Math.PI / 2);
 
+        const frontOffset = -0.2
         this.wheelBody1 = createWheelBody();
         this.vehicle.addWheel({
           body: this.wheelBody1,
-          position: new CANNON.Vec3(-vehicleOptions.wheel_x, vehicleOptions.wheel_y, vehicleOptions.axis_width / vehicleOptions.front_wheel_z_scale),
+          position: new CANNON.Vec3(-vehicleOptions.wheel_x + frontOffset, vehicleOptions.wheel_y, vehicleOptions.axis_width / vehicleOptions.front_wheel_z_scale),
           axis: new CANNON.Vec3(0, 0, 1),
           direction: down,
         })
@@ -64,7 +66,7 @@ export default class Vehicle {
         this.wheelBody2 = createWheelBody();
         this.vehicle.addWheel({
           body: this.wheelBody2,
-          position: new CANNON.Vec3(-vehicleOptions.wheel_x, vehicleOptions.wheel_y, -vehicleOptions.axis_width / vehicleOptions.front_wheel_z_scale),
+          position: new CANNON.Vec3(-vehicleOptions.wheel_x + frontOffset, vehicleOptions.wheel_y, -vehicleOptions.axis_width / vehicleOptions.front_wheel_z_scale),
           axis: new CANNON.Vec3(0, 0, -1),
           direction: down,
         })
