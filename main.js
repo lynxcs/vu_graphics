@@ -16,7 +16,7 @@ const wireFrameEnabled = false;
 const debugEnabled = false;
 const showCollisions = false;
 const heightScale = 0.2;
-const textureSize = 1024;
+const textureSize = 2048;
 
 const vehicleParams = {
     mass: 1,
@@ -43,7 +43,7 @@ function generateCanvasElement(width, height, id) {
 }
 
 document.body.appendChild(generateCanvasElement(textureSize, textureSize, 'canvasD'));
-document.body.appendChild(generateCanvasElement(textureSize, textureSize, 'canvasN'));
+// document.body.appendChild(generateCanvasElement(textureSize, textureSize, 'canvasN'));
 
 function setHeights(heightfield, canvas, scale, update_h = false) {
     const { x, z, y } = scale;
@@ -141,8 +141,8 @@ controls.enableDamping = true
 
 const canvasD = document.getElementById('canvasD')
 const contextD = canvasD.getContext('2d', { willReadFrequently: true })
-const canvasN = document.getElementById('canvasN')
-const contextN = canvasN.getContext('2d')
+// const canvasN = document.getElementById('canvasN')
+// const contextN = canvasN.getContext('2d')
 // contextN.fillStyle = '#7f7fff'
 // contextN.fillRect(0, 0, textureSize, textureSize)
 contextD.fillStyle = '#FFFFFF'
@@ -150,7 +150,7 @@ contextD.fillRect(0, 0, textureSize, textureSize)
 // height2normal(contextD, contextN);
 
 const displacementMap = new THREE.CanvasTexture(canvasD)
-const normalMap = new THREE.CanvasTexture(canvasN)
+// const normalMap = new THREE.CanvasTexture(canvasN)
 
 const colorMap = new THREE.TextureLoader().load(snowTextureUrl);
 
@@ -221,8 +221,6 @@ heightfieldBody.position.set(snowGeomPlot / 2, 0, snowGeomPlot / 2);
 // world.addBody(heightfieldBody)
 
 function initDisplacement() {
-    contextN.fillStyle = '#7f7fff'
-    contextN.fillRect(0, 0, textureSize, textureSize)
     contextD.fillStyle = '#FFFFFF'
     contextD.fillRect(0, 0, textureSize, textureSize)
     coloredMaterial.needsUpdate = true
@@ -496,7 +494,7 @@ const depthCombinerMaterial = new THREE.ShaderMaterial({
     void main() {
       vec2 uv = vUv;
       uv.y = 1.0 - uv.y;  // Flip vertically if necessary
-      float depth2 = texture2D(depthTexture, vUv).r;
+      float depth2 = texture2D(depthTexture, uv).r;
       float depthOrig = texture2D(originalTexture, uv).r;
       float resDepth = min(depth2, depthOrig);
       gl_FragColor = vec4(vec3(resDepth), 1.0);
@@ -508,30 +506,45 @@ const quad = new THREE.Mesh(quadGeom, depthCombinerMaterial);
 const combinerScene = new THREE.Scene();
 combinerScene.add(quad);
 const combinerCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-// combinerCamera.rotateY(180)
 combinerCamera.updateProjectionMatrix();
 
-// const tempMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const depthCombinerSyncTarget = new THREE.WebGLRenderTarget(textureSize, textureSize);
+const depthCombinerSyncMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        depthTexture: { value: depthCombinerTextureTarget.texture },
+    },
+    vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+    `,
+    fragmentShader: `
+    varying vec2 vUv;
+    uniform sampler2D depthTexture;
+
+    void main() {
+      vec2 uv = vUv;
+      uv.y = 1.0 - uv.y;  // Flip vertically if necessary
+      gl_FragColor = vec4(texture2D(depthTexture, uv));
+    }
+  `
+});
+const quad2 = new THREE.Mesh(quadGeom, depthCombinerSyncMaterial);
+const combinerScene2 = new THREE.Scene();
+combinerScene2.add(quad2);
 
 function applyDepthToDisplacementMap() {
-    // Get depth data from the depthCombinerTextureTarget
-    renderer.setRenderTarget(depthCombinerTextureTarget);
-    // const pixelBuffer = new Uint8Array(textureSize * textureSize * 4);
-    const imageData = contextD.createImageData(textureSize, textureSize);
-    renderer.readRenderTargetPixels(depthCombinerTextureTarget, 0, 0, textureSize, textureSize, imageData.data);
-    renderer.setRenderTarget(null);
+    coloredMaterial.uniforms.bumpTexture.value = depthCombinerTextureTarget.texture;
+    coloredMaterial.uniforms.bumpTexture.value.needsUpdate = true;
+    coloredMaterial.texture = depthCombinerTextureTarget.texture;
+    coloredMaterial.texture.needsUpdate = true;
+    coloredMaterial.needsUpdate = true;
 
-    // Now update the canvasD with the depth-modified displacement values
-    // const imgData = new ImageData(pixelBuffer, )
-    // for (let i = 0; i < textureSize * textureSize * 4; i += 4) {
-    //     imageData.data[i] = pixelBuffer[i];       // R channel (Height/displacement)
-    //     imageData.data[i + 1] = pixelBuffer[i + 1]; // G channel
-    //     imageData.data[i + 2] = pixelBuffer[i + 2]; // B channel
-    //     imageData.data[i + 3] = 255;              // Alpha
-    // }
-    contextD.putImageData(imageData, 0, 0);
-    displacementMap.needsUpdate = true;
-    // height2normal(contextD, contextN);
+    depthCombinerMaterial.uniforms.originalTexture.value = depthCombinerSyncTarget.texture;
+    depthCombinerMaterial.uniforms.originalTexture.value.needsUpdate = true;
+    depthCombinerMaterial.needsUpdate = true;
 }
 
 function animate() {
@@ -556,14 +569,15 @@ function animate() {
     vehicle.update();
 
     renderer.setRenderTarget(depthRenderTarget);
-    // scene.overrideMaterial = tempMat;
     renderer.render(scene, depthCamera);
-    // scene.overrideMaterial = null;
 
     depthRenderTarget.depthTexture.needsUpdate = true;
     
     renderer.setRenderTarget(depthCombinerTextureTarget);
     renderer.render(combinerScene, combinerCamera);
+
+    renderer.setRenderTarget(depthCombinerSyncTarget);
+    renderer.render(combinerScene2, combinerCamera);
     
     applyDepthToDisplacementMap();
     
