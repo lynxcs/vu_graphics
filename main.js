@@ -102,16 +102,10 @@ controls.enableDamping = true
 
 const canvasD = document.getElementById('canvasD')
 const contextD = canvasD.getContext('2d', { willReadFrequently: true })
-// const canvasN = document.getElementById('canvasN')
-// const contextN = canvasN.getContext('2d')
-// contextN.fillStyle = '#7f7fff'
-// contextN.fillRect(0, 0, textureSize, textureSize)
 contextD.fillStyle = '#FFFFFF'
 contextD.fillRect(0, 0, textureSize, textureSize)
-// height2normal(contextD, contextN);
 
 const displacementMap = new THREE.CanvasTexture(canvasD)
-// const normalMap = new THREE.CanvasTexture(canvasN)
 
 const colorMap = new THREE.TextureLoader().load(snowTextureUrl);
 colorMap.wrapS = THREE.RepeatWrapping;
@@ -356,8 +350,8 @@ vehicleFolder.onFinishChange(function () {
 
 const depthTexOpts = {
     format: THREE.RedFormat,
-    minFilter: THREE.NearestFilter,
-    magFilter: THREE.NearestFilter,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
     type: THREE.FloatType,
     generateMipmaps: false,
 }

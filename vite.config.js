@@ -8,4 +8,6 @@ export default defineConfig({
             /* pass your config */
         }),
     ],
+    assetsInclude: ['**/*.glb']
 })
+

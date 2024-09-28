@@ -5,6 +5,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { threeToCannon, ShapeType } from 'three-to-cannon';
 
+import chassisUrl from './models/chassis.glb?url'
+import wheelUrl from './models/wheel3.glb?url'
+
 export default class Vehicle {
     // Vehicle options must have:
     // mass
@@ -119,7 +122,7 @@ export default class Vehicle {
         gltfLoader.setDRACOLoader(dracoLoader);
 
         // Load chassis model
-        let chassis_gltf = await gltfLoader.loadAsync("./models/chassis.glb");
+        let chassis_gltf = await gltfLoader.loadAsync(chassisUrl);
         // chassis_gltf.scene.scale.set(2.5, 2.5, 2.5); 
         this.chassisMesh = chassis_gltf.scene;
         this.scene.add(this.chassisMesh);
@@ -129,7 +132,7 @@ export default class Vehicle {
         
         // Load wheel model
         // Back right
-        let wheel_gltf = await gltfLoader.loadAsync('./models/wheel3.glb');
+        let wheel_gltf = await gltfLoader.loadAsync(wheelUrl);
         let wheelScale = 0.0018;
         wheel_gltf.scene.scale.set(wheelScale, wheelScale, wheelScale); 
         this.wheelMesh = wheel_gltf.scene;
