@@ -14,9 +14,9 @@ import snowTextureUrl from './textures/snow6_color.png'
 
 const wireFrameEnabled = false;
 const debugEnabled = false;
-const showCollisions = false;
 const heightScale = 0.2;
 const textureSize = 2048;
+const snowGeomPlot = 4;
 
 const vehicleParams = {
     mass: 1,
@@ -44,45 +44,6 @@ function generateCanvasElement(width, height, id) {
 
 document.body.appendChild(generateCanvasElement(textureSize, textureSize, 'canvasD'));
 // document.body.appendChild(generateCanvasElement(textureSize, textureSize, 'canvasN'));
-
-function setHeights(heightfield, canvas, scale, update_h = false) {
-    const { x, z, y } = scale;
-    const imageData = canvas.getImageData(0, 0, textureSize, textureSize);
-
-    // Set element size for heightfield
-    if (update_h === false) {
-        heightfield.elementSize = Math.abs(x) / imageData.width;
-        heightfield.data = [...Array(imageData.width)].map(e => Array(imageData.height).fill(0));
-    }
-
-    const matrix = heightfield.data;
-
-    // Iterate over the imageData and update the matrix accordingly
-    let lowest = 9999.999;
-    let highest = -9999.99;
-    for (let i = 0; i < imageData.height; i++) {
-        const dataOffset = i * imageData.height;
-        const matrixRow = matrix[y < 0 ? imageData.height - 1 - i : i];
-        for (let j = 0; j < imageData.width; j++) {
-            const a = imageData.data[(dataOffset + j) * 4];
-            const height = (((a) / 255) * z);
-            const colIdx = x < 0 ? j : imageData.width - 1 - j;
-
-            if (height < lowest) {
-                lowest = height;
-            }
-            if (height > highest) {
-                highest = height;
-            }
-
-            matrixRow[colIdx] = height;
-        }
-    }
-
-    heightfield.maxValue = highest;
-    heightfield.minValue = lowest;
-    heightfield.update();
-}
 
 // Add three-mesh-bvh extensions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -153,8 +114,10 @@ const displacementMap = new THREE.CanvasTexture(canvasD)
 // const normalMap = new THREE.CanvasTexture(canvasN)
 
 const colorMap = new THREE.TextureLoader().load(snowTextureUrl);
+colorMap.wrapS = THREE.RepeatWrapping;
+colorMap.wrapT = THREE.RepeatWrapping;
+colorMap.repeat.set( 4, 4 );
 
-const snowGeomPlot = 16;
 const geometry = new THREE.PlaneGeometry(snowGeomPlot, snowGeomPlot, textureSize, textureSize)
 
 const uniforms = {
@@ -172,7 +135,7 @@ const coloredMaterial = new THREE.ShaderMaterial({
 
 const plane = new THREE.Mesh(geometry, coloredMaterial)
 
-geometry.computeBoundsTree();
+// geometry.computeBoundsTree();
 
 plane.rotation.x = -Math.PI / 2
 scene.add(plane)
@@ -210,22 +173,11 @@ for (let i = 0; i < sizeX; i++) {
         matrix[i].push(height)
     }
 }
-const heightsElem = { x: snowGeomPlot, z: heightScale, y: -2 }
-let heightfieldShape = new CANNON.Heightfield(matrix, { elementSize: 4 })
-setHeights(heightfieldShape, contextD, heightsElem)
-const heightfieldBody = new CANNON.Body({ mass: 0, isTrigger: true, shape: heightfieldShape, type: CANNON.Body.STATIC })
-
-heightfieldBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0.5 * Math.PI)
-heightfieldBody.position.set(snowGeomPlot / 2, 0, snowGeomPlot / 2);
-
-// world.addBody(heightfieldBody)
-
 function initDisplacement() {
     contextD.fillStyle = '#FFFFFF'
     contextD.fillRect(0, 0, textureSize, textureSize)
     coloredMaterial.needsUpdate = true
     displacementMap.needsUpdate = true;
-    // height2normal(contextD, contextN);
 }
 
 const controlParameters = {
@@ -233,6 +185,9 @@ const controlParameters = {
     brushPower: -1,
     resetDisplacement: function () {
         initDisplacement();
+        depthCombinerMaterial.uniforms.originalTexture.value = displacementMap;
+        depthCombinerMaterial.uniforms.originalTexture.value.needsUpdate = true;
+        depthCombinerMaterial.needsUpdate = true;
     },
 };
 
@@ -325,15 +280,6 @@ function draw(uv, set_h = true, update_n = true, intensity = 0.0, increaseTo = f
     if (was_modified) {
         coloredMaterial.needsUpdate = true
         displacementMap.needsUpdate = true;
-        if (update_n) {
-            // height2normal(contextD, contextN);
-        }
-        if (set_h) {
-            heightfieldBody.removeShape(heightfieldShape);
-            setHeights(heightfieldShape, contextD, heightsElem)
-            heightfieldBody.addShape(heightfieldShape);
-        }
-        debugMeshWasupdated = true;
     }
     return was_modified;
 }
@@ -392,37 +338,6 @@ gui.add(controlParameters, 'brushSize', 1, 64, 1)
 gui.add(controlParameters, 'brushPower', -255, 255, 1)
 gui.add(controlParameters, 'resetDisplacement')
 
-const mapNum = function (obj, in_min, in_max, out_min, out_max) {
-    let val = (obj - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-    if (val < out_min) val = out_min;
-    else if (val > out_max) val = out_max;
-    return val;
-}
-
-function displayDebugSphere(position) {
-    if (showCollisions) {
-        let writtenIdx = debugInstance.count;
-        debugInstance.setMatrixAt(writtenIdx, new THREE.Matrix4().makeTranslation(position.x, position.y, position.z));
-        debugInstance.count++;
-        debugInstance.instanceMatrix.needsUpdate = true;
-    }
-}
-
-function clearDebugSpheres() {
-    if (showCollisions) {
-        debugInstance.count = 0;
-        debugInstance.instanceMatrix.needsUpdate = true;
-    }
-}
-
-const debugGeom = showCollisions ? new THREE.SphereGeometry(0.01, 4, 4) : undefined; // Small sphere with radius 0.1
-const debugMat = showCollisions ? new THREE.MeshBasicMaterial({ color: 0x00ff00 }) : undefined; // Green color
-const debugInstance = showCollisions ? new THREE.InstancedMesh(debugGeom, debugMat, 3000) : undefined;
-if (showCollisions) {
-    debugInstance.count = 0;
-    scene.add(debugInstance);
-}
-
 var vehicle = new Vehicle(scene, world, groundMaterial, vehicleParams);
 
 const vehicleFunctions = {
@@ -439,18 +354,21 @@ vehicleFolder.onFinishChange(function () {
     vehicle = new Vehicle(scene, world, groundMaterial, vehicleParams);
 });
 
-const depthRenderTarget = new THREE.WebGLRenderTarget(textureSize, textureSize);
-depthRenderTarget.texture.format = THREE.RGBAFormat;
-depthRenderTarget.texture.minFilter = THREE.NearestFilter;
-depthRenderTarget.texture.magFilter = THREE.NearestFilter;
-depthRenderTarget.texture.generateMipmaps = false;
+const depthTexOpts = {
+    format: THREE.RedFormat,
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    type: THREE.FloatType,
+    generateMipmaps: false,
+}
+
+const depthRenderTarget = new THREE.WebGLRenderTarget(textureSize, textureSize, depthTexOpts);
 depthRenderTarget.stencilBuffer = false;
 depthRenderTarget.depthTexture = new THREE.DepthTexture();
 depthRenderTarget.depthTexture.type = THREE.FloatType;
 depthRenderTarget.depthTexture.format = THREE.DepthFormat;
 depthRenderTarget.depthBuffer = true;
 
-var aspect = window.innerWidth / window.innerHeight;
 const depthCamera = new THREE.OrthographicCamera(
   -snowGeomPlot / 2, snowGeomPlot / 2, // left, right
   snowGeomPlot / 2, -snowGeomPlot / 2, // top, bottom
@@ -460,21 +378,13 @@ depthCamera.position.set(0, -0.001, 0); // Below the plane, at Y = -L
 depthCamera.rotation.x = -Math.PI / 2
 depthCamera.rotation.z = -Math.PI
 depthCamera.rotation.y = -Math.PI
-// depthCamera.lookAt(0, 10, 0);        // Looking up towards Y = 0
 depthCamera.updateProjectionMatrix();
 
-// const helper = new THREE.CameraHelper( depthCamera );
-// scene.add( helper );
-
-
-const depthCombinerTextureTarget = new THREE.WebGLRenderTarget(textureSize, textureSize);
+const depthCombinerTextureTarget = new THREE.WebGLRenderTarget(textureSize, textureSize, depthTexOpts);
 const depthCombinerMaterial = new THREE.ShaderMaterial({
     uniforms: {
         depthTexture: { value: depthRenderTarget.depthTexture },
         originalTexture: { value: displacementMap },
-        // FIXME: This is bad - wrong camera (but right one doesn't work?? )
-        cameraNear: { value: camera.near },
-        cameraFar: { value: camera.far },
     },
     vertexShader: `
     varying vec2 vUv;
@@ -487,9 +397,6 @@ const depthCombinerMaterial = new THREE.ShaderMaterial({
     varying vec2 vUv;
     uniform sampler2D depthTexture;
     uniform sampler2D originalTexture;
-    uniform float cameraNear;
-    uniform float cameraFar;
-    varying vec3 vWorldPosition;
 
     void main() {
       vec2 uv = vUv;
@@ -508,7 +415,7 @@ combinerScene.add(quad);
 const combinerCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 combinerCamera.updateProjectionMatrix();
 
-const depthCombinerSyncTarget = new THREE.WebGLRenderTarget(textureSize, textureSize);
+const depthCombinerSyncTarget = new THREE.WebGLRenderTarget(textureSize, textureSize, depthTexOpts);
 const depthCombinerSyncMaterial = new THREE.ShaderMaterial({
     uniforms: {
         depthTexture: { value: depthCombinerTextureTarget.texture },
@@ -536,15 +443,19 @@ const combinerScene2 = new THREE.Scene();
 combinerScene2.add(quad2);
 
 function applyDepthToDisplacementMap() {
-    coloredMaterial.uniforms.bumpTexture.value = depthCombinerTextureTarget.texture;
-    coloredMaterial.uniforms.bumpTexture.value.needsUpdate = true;
-    coloredMaterial.texture = depthCombinerTextureTarget.texture;
-    coloredMaterial.texture.needsUpdate = true;
-    coloredMaterial.needsUpdate = true;
+    if (coloredMaterial.uniforms.bumpTexture.value != depthCombinerTextureTarget.texture) {
+        coloredMaterial.uniforms.bumpTexture.value = depthCombinerTextureTarget.texture;
+        coloredMaterial.uniforms.bumpTexture.value.needsUpdate = true;
+        coloredMaterial.texture = depthCombinerTextureTarget.texture;
+        coloredMaterial.texture.needsUpdate = true;
+        coloredMaterial.needsUpdate = true;
+    }
 
-    depthCombinerMaterial.uniforms.originalTexture.value = depthCombinerSyncTarget.texture;
-    depthCombinerMaterial.uniforms.originalTexture.value.needsUpdate = true;
-    depthCombinerMaterial.needsUpdate = true;
+    if (depthCombinerMaterial.uniforms.originalTexture.value != depthCombinerSyncTarget.texture) {
+        depthCombinerMaterial.uniforms.originalTexture.value = depthCombinerSyncTarget.texture;
+        depthCombinerMaterial.uniforms.originalTexture.value.needsUpdate = true;
+        depthCombinerMaterial.needsUpdate = true;
+    }
 }
 
 function animate() {
@@ -571,8 +482,6 @@ function animate() {
     renderer.setRenderTarget(depthRenderTarget);
     renderer.render(scene, depthCamera);
 
-    depthRenderTarget.depthTexture.needsUpdate = true;
-    
     renderer.setRenderTarget(depthCombinerTextureTarget);
     renderer.render(combinerScene, combinerCamera);
 
