@@ -14,7 +14,7 @@ import snowTextureUrl from './textures/snow6_color.png'
 
 const wireFrameEnabled = false;
 const debugEnabled = false;
-const heightScale = 0.2;
+const heightScale = 0.1;
 const textureSize = 2048;
 const snowGeomPlot = 4;
 

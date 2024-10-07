@@ -36,6 +36,10 @@ export default class Vehicle {
             chassisBody: this.chassisBody,
         });
 
+        this.chassisMesh.position.copy(this.chassisBody.position)
+        this.chassisMesh.quaternion.copy(this.chassisBody.quaternion)
+        this.scene.add(this.chassisMesh);
+
         const wheelMaterial = new CANNON.Material();
         let down = new CANNON.Vec3(0, -1, 0);
         const numSegments = 16;
@@ -64,6 +68,8 @@ export default class Vehicle {
           direction: down,
         })
         this.wheelMesh1 = this.wheelMesh.clone();
+        this.wheelMesh1.position.copy(this.wheelBody1.position)
+        this.wheelMesh1.quaternion.copy(this.wheelBody1.quaternion)
         scene.add(this.wheelMesh1)
 
         this.wheelBody2 = createWheelBody();
@@ -74,6 +80,8 @@ export default class Vehicle {
           direction: down,
         })
         this.wheelMesh2 = this.wheelMesh.clone();
+        this.wheelMesh2.position.copy(this.wheelBody2.position)
+        this.wheelMesh2.quaternion.copy(this.wheelBody2.quaternion)
         scene.add(this.wheelMesh2)
 
         this.wheelBody3 = createWheelBody();
@@ -84,6 +92,8 @@ export default class Vehicle {
           direction: down,
         })
         this.wheelMesh3 = this.wheelMesh.clone();
+        this.wheelMesh3.position.copy(this.wheelBody3.position)
+        this.wheelMesh3.quaternion.copy(this.wheelBody3.quaternion)
         scene.add(this.wheelMesh3)
 
         this.wheelBody4 = createWheelBody();
@@ -94,6 +104,8 @@ export default class Vehicle {
           direction: down,
         })
         this.wheelMesh4 = this.wheelMesh;
+        this.wheelMesh4.position.copy(this.wheelBody4.position)
+        this.wheelMesh4.quaternion.copy(this.wheelBody4.quaternion)
         scene.add(this.wheelMesh4)
 
         this.vehicle.wheelBodies.forEach((wheelBody) => {
@@ -125,7 +137,6 @@ export default class Vehicle {
         let chassis_gltf = await gltfLoader.loadAsync(chassisUrl);
         // chassis_gltf.scene.scale.set(2.5, 2.5, 2.5); 
         this.chassisMesh = chassis_gltf.scene;
-        this.scene.add(this.chassisMesh);
         // chassis_gltf.scene.traverse(function (child) {
         //     console.log(child);
         // });
